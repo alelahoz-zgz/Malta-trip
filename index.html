@@ -771,11 +771,37 @@
     </div>
 
     <script>
-        // Toggle collapse days
+        // Toggle collapse days with localStorage persistence
         function toggleDay(header) {
             const dayCard = header.closest('.day-card');
             dayCard.classList.toggle('collapsed');
+            saveCollapseState();
         }
+
+        function saveCollapseState() {
+            const cards = document.querySelectorAll('.day-card');
+            const state = {};
+            cards.forEach(function(card, i) {
+                if (card.classList.contains('collapsed')) {
+                    state[i] = true;
+                }
+            });
+            localStorage.setItem('malta-collapse', JSON.stringify(state));
+        }
+
+        function loadCollapseState() {
+            var saved = localStorage.getItem('malta-collapse');
+            if (!saved) return;
+            var state = JSON.parse(saved);
+            var cards = document.querySelectorAll('.day-card');
+            cards.forEach(function(card, i) {
+                if (state[i]) {
+                    card.classList.add('collapsed');
+                }
+            });
+        }
+
+        loadCollapseState();
 
         // Coordenadas clave
         const ZGZ = [41.6488, -0.8891];
