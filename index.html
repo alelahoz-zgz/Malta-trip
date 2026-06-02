@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viaje a Malta — 4 al 9 de Junio 2026</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Playfair+Display:wght@700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f0eb;
+            color: #2d2d2d;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+        }
+
+        /* HERO */
+        .hero {
+            position: relative;
+            height: 220px;
+            background: linear-gradient(135deg, #0077b6, #00b4d8, #90e0ef);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            padding: 24px;
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .hero .subtitle {
+            font-size: 0.95em;
+            font-weight: 300;
+            opacity: 0.95;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .hero .dates {
+            margin-top: 12px;
+            font-size: 0.88em;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* CONTENT */
+        .content { padding: 0 40px 40px; }
+
+        /* DAY CARDS */
+        .day-card {
+            margin-top: 36px;
+            border: none;
+            border-radius: 0;
+            overflow: hidden;
+            page-break-inside: avoid;
+            transition: margin 0.3s;
+        }
+        .day-hero { display: none; }
+        .day-header {
+            padding: 18px 24px;
+            font-weight: 700;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px;
+            border: 2px solid;
+            margin-bottom: 16px;
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s;
+        }
+        .day-header:hover { opacity: 0.85; }
+        .day-header .collapse-icon {
+            font-size: 0.8em;
+            transition: transform 0.3s;
+            margin-left: 10px;
+        }
+        .day-card.collapsed .collapse-icon { transform: rotate(-90deg); }
+        .day-card.collapsed .day-body,
+        .day-card.collapsed .day-map,
+        .day-card.collapsed > div:not(.day-header) { display: none; }
+        .day-card.collapsed .day-header { margin-bottom: 0; }
+        .day-card.collapsed { margin-top: 12px; }
+        .day-subtitle {
+            font-size: 0.95em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-subtitle .subtitle-time {
+            font-size: 0.85em;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+        /* Azul — Transporte */
+        .day-subtitle.transport { color: #0077b6; background: #f0f9ff; border-left-color: #0077b6; }
+        /* Amarillo/Naranja — Alojamiento */
+        .day-subtitle.hotel { color: #92400e; background: #fffbeb; border-left-color: #f59e0b; }
+        /* Verde — Actividades */
+        .day-subtitle.activity { color: #166534; background: #f0fdf4; border-left-color: #22c55e; }
+        /* Rojo claro — Comida */
+        .day-subtitle.food { color: #991b1b; background: #fef2f2; border-left-color: #f87171; }
+        .day-1 .day-header, .day-2 .day-header, .day-3 .day-header,
+        .day-4 .day-header, .day-5 .day-header, .day-6 .day-header {
+            background: #f9fafb; color: #374151; border-color: #d1d5db;
+        }
+        .day-tag {
+            font-size: 0.7em; padding: 3px 12px; border-radius: 12px;
+            background: rgba(0,0,0,0.06); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .day-budget {
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #15803d;
+            margin-left: 12px;
+        }
+        .day-body { padding: 20px 24px; }
+        .day-map {
+            height: 220px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 16px 24px;
+            border: 1px solid #e5e7eb;
+        }
+        .time-block { margin-bottom: 16px; padding-left: 16px; border-left: 3px solid #e5e7eb; }
+        .time-block:last-child { margin-bottom: 0; }
+        .time-label {
+            font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px;
+            color: #6b7280; font-weight: 600; margin-bottom: 4px;
+        }
+        .time-block p { font-size: 0.92em; color: #374151; }
+        .highlight {
+            background: #f0fdf4; border: 1px solid #bbf7d0;
+            border-radius: 8px; padding: 14px 18px; margin-top: 8px; font-size: 0.88em;
+        }
+        .highlight strong { color: #166534; }
+        .highlight a { color: #0077b6; font-weight: 600; }
+
+        /* FOOTER */
+        .footer {
+            text-align: center; padding: 32px 40px; background: linear-gradient(135deg, #0077b6, #00b4d8);
+            color: white; font-size: 0.85em;
+        }
+        .footer a { color: rgba(255,255,255,0.8); }
+
+        @media (max-width: 700px) {
+            .hero { height: 180px; }
+            .hero h1 { font-size: 1.8em; }
+            .content { padding-left: 20px; padding-right: 20px; }
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border-radius: 0; }
+            .day-card { break-inside: avoid; }
+        }
+
+        .flight-tooltip {
+            background: white;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78em;
+            font-weight: 600;
+            color: #0077b6;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .flight-tooltip::before { border-top-color: #bae6fd; }
+        .leaflet-tooltip {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75em;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HERO -->
+        <div class="hero">
+            <div class="hero-content">
+                <h1>🇲🇹 Malta</h1>
+                <div class="subtitle">Snorkel · Barco · Calas · Tardeo</div>
+                <div class="dates">4 — 9 de Junio 2026</div>
+            </div>
+        </div>
+
+        <!-- DÍA 1 -->
+        <div class="content">
+            <div class="day-card day-1">
+                <div class="day-header" onclick="toggleDay(this)">
+                    <span>Día 1 — Jueves 4 de Junio</span>
+                    <span><span class="day-tag">Llegada + La Valeta</span><span class="day-budget">~238€</span><span class="collapse-icon">▼</span></span>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Coche <span class="subtitle-time">02:00 — 05:15</span></div>
+                    <div class="time-block">
+                        <p>Salida en coche por AP-2 / A-2. Llegada al parking <strong>BCN1 (T1)</strong> sobre las <strong>05:15</strong>. <a href="https://maps.app.goo.gl/5FC9A3LPZ35bHu9T6" target="_blank" style="color: #0077b6; font-weight: 600;">Abrir en Maps →</a></p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~3h 15min · ~300 km · ~21€ (5L/100km × 1,40€/L)</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-zgz-bcn"></div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚇 Metro <span class="subtitle-time">05:15 — 05:30</span></div>
+                    <div class="time-block">
+                        <p>Dejar el coche en el parking BCN1 (junto a estación Mas Blau). Metro <strong>L9 Sud una parada</strong> hasta <strong>Aeroport T2</strong>. Llegada ~<strong>05:30</strong>.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">5,90€/persona × 2 = 11,80€ · Sale cada 7 min · <a href="https://www.tmb.cat/en/visit-barcelona/public-transport/metro-airport" target="_blank" style="color: #0077b6;">Info TMB →</a></p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-bcn1-airport"></div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">✈️ Avión <span class="subtitle-time">06:45 — 09:00</span></div>
+                    <div class="time-block">
+                        <p>Vuelo <strong>Ryanair FR1527</strong> · Boeing 737-800. Salida <strong>06:45</strong>, llegada Malta <strong>09:00</strong>.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~2h 15min · Llevar boarding pass descargado</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-flight-ida"></div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚌 Bus <span class="subtitle-time">09:00 — 09:30</span></div>
+                    <div class="time-block">
+                        <p>Opciones de bus desde el aeropuerto:</p>
+                        <div class="highlight" style="background: #f0f9ff; border-color: #bae6fd;">
+                            <strong style="color: #0077b6;">Bus 117 (Recomendado)</strong><br>
+                            → Aeropuerto → Luqa → Qormi → Mater Dei Hospital → Universidad de Malta<br>
+                            → Bajáis en <strong>Mater Dei / Universidad</strong>, a 5 min andando del Airbnb<br>
+                            → ~25-30 min · Sale cada 30 min<br>
+                            → <strong>1,50€/persona</strong> (tarjeta Tallinja) o 2€ en efectivo
+                        </div>
+                        <div class="highlight" style="margin-top: 10px; background: #f0f9ff; border-color: #bae6fd;">
+                            <strong style="color: #0077b6;">TD3 — Tallinja Direct</strong><br>
+                            → Aeropuerto → St. Julian's → Sliema (ruta directa rápida)<br>
+                            → Bajáis en St. Julian's o Sliema y de allí 10 min andando a Msida<br>
+                            → ~20-25 min<br>
+                            → <strong>3€/persona</strong> (servicio express)
+                        </div>
+                        <p style="font-size: 0.82em; color: #6b7280; margin-top: 10px;">Comprobad horarios en <a href="https://www.publictransport.com.mt/" target="_blank" style="color: #0077b6; font-weight: 600;">publictransport.com.mt →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">☕ Desayuno <span class="subtitle-time">09:45 — 12:00</span></div>
+                    <div class="time-block">
+                        <p>Desayuno/brunch tranquilo con vistas al mar mientras esperáis para dejar cosas en el Airbnb a las 12:00. Cocina mediterránea fresca, buen café y terraza en el paseo marítimo.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">ix-Xatt Ta' Xbiex, Msida Seafront (a 3 min andando del Airbnb) · <a href="https://maps.app.goo.gl/jArkVj9mzXWwt75bA" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~2h 15min · ~25€ los dos · Abre desde las 08:00</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle hotel">🏠 Alojamiento <span class="subtitle-time">12:00</span></div>
+                    <div class="time-block">
+                        <p>Anfitriona: Maria (Superanfitrión) · ★ 4,76 · 1 dormitorio · 1 cama king · Baño compartido</p>
+                        <p>Msida, Malta — A 10 min de La Valeta, Sliema y St. Julian's</p>
+                        <p>Llegada autónoma 24h (cerradura inteligente) · Check-in: 15:00 · Check-out: 10:00</p>
+                        <div class="highlight" style="background: #fffbeb; border-color: #fde68a;">
+                            <strong style="color: #92400e;">275,15€ — 5 noches</strong><br>
+                            → <a href="https://www.airbnb.es/rooms/11714770" target="_blank">Ver en Airbnb →</a><br>
+                            → <a href="https://www.google.com/maps/search/Msida+Marina,+Malta/@35.8953,14.4878,16z" target="_blank">Ver en Google Maps →</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="day-map" id="map-accommodation"></div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🏛️ La Valeta <span class="subtitle-time">12:30 — 15:00</span></div>
+                    <div class="time-block">
+                        <p>Paseo por <strong>La Valeta</strong>: ciudad amurallada, <strong>Upper Barrakka Gardens</strong> (vistas al Gran Puerto, gratis). Está a 10 min andando desde Msida.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍽️ Comida <span class="subtitle-time">14:00 — 15:30</span></div>
+                    <div class="time-block">
+                        <p><strong>Nenu the Artisan Baker</strong> — Restaurante de cocina maltesa auténtica en pleno centro de La Valeta. Pastizzi, ftira, rabbit stew y platos tradicionales. Ambiente acogedor, bien valorado, precios razonables. <strong>RESERVADO</strong></p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">143 St Dominic St, Valletta · Reserva a las 14:00 · ~30-40€ los dos · <a href="https://www.google.com/maps/search/Nenu+the+Artisan+Baker+Valletta+Malta/@35.8975,14.5115,17z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🏖️ Paseo La Valeta → Sliema <span class="subtitle-time">16:00 — 19:30</span></div>
+                    <div class="time-block">
+                        <p>Ruta a pie por el waterfront (~5 km, 1h 15min sin paradas). Merece la pena ir parando:</p>
+                        <div class="highlight" style="background: #f0fdf4; border-color: #bbf7d0;">
+                            <strong style="color: #166534;">Ruta y paradas:</strong><br><br>
+                            <strong>1. Waterfront de La Valeta → Ta' Xbiex</strong> (~15 min)<br>
+                            → Salida por debajo de las murallas. Vistas al Gran Puerto y las Three Cities enfrente.<br><br>
+                            <strong>2. Manoel Island y Fort Manoel</strong> (vista desde Gżira)<br>
+                            → Fuerte en forma de estrella construido en 1723 por los Caballeros de San Juan. Se usó como localización de Juego de Tronos (Gran Septo de Baelor). La isla también tenía el Lazzaretto, hospital de cuarentena del siglo XVII.<br><br>
+                            <strong>3. Tigné Point y Fort Tigné</strong><br>
+                            → Uno de los fuertes poligonales más antiguos del mundo (1793). Construido por la Orden de San Juan para proteger la entrada al puerto de Marsamxett. En esta misma punta murió <strong>Dragut</strong> en 1565: almirante otomano que lideró el asedio a Fort St. Elmo durante el Gran Sitio de Malta. Le alcanzó metralla desde el fuerte mientras dirigía sus cañones. El extremo de la península se llama <em>Dragut Point</em> en su memoria.<br><br>
+                            <strong>4. Sliema Promenade (Tower Road)</strong><br>
+                            → Paseo marítimo con rocas planas para baño, pozas naturales y vistas al mar abierto. Zona de cafés y terrazas al atardecer. Ideal para un baño si apetece.
+                        </div>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍹 Aperitivo <span class="subtitle-time">19:30 — 21:00</span></div>
+                    <div class="time-block">
+                        <p><strong>The Compass Lounge</strong> — Chiringuito relajado en la zona de Qui-Si-Sana (Sliema), justo en el paseo marítimo. Terraza al borde del mar, buen sitio para una cerveza o spritz y picar algo ligero (tostas, tabla, snacks) sin complicarse. Ambiente tranquilo, nada de fiesta.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Qui-Si-Sana, Sliema seafront · ~15-20€ los dos · <a href="https://www.google.com/maps/search/The+Compass+Lounge+Sliema+Malta/@35.9122,14.5028,16z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Después, vuelta al Airbnb a descansar (10 min andando desde Sliema).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DÍA 2 -->
+            <div class="day-card day-2">
+                <div class="day-header" onclick="toggleDay(this)">
+                    <span>Día 2 — Viernes 5 de Junio</span>
+                    <span><span class="day-tag">Snorkel / Buceo</span><span class="day-budget">~441€</span><span class="collapse-icon">▼</span></span>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">😴 Descanso <span class="subtitle-time">— hasta 10:00</span></div>
+                    <div class="time-block">
+                        <p>Despertar tranquilo sobre las <strong>10:00</strong>. Día anterior largo, toca recuperar energía.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🚶 Paseo a St. Julian's <span class="subtitle-time">10:15 — 10:45</span></div>
+                    <div class="time-block">
+                        <p>Caminar desde Msida hasta <strong>Portomaso Marina</strong> (St. Julian's) por el paseo marítimo. ~25-30 min, todo llano y con vistas a los barcos.</p>
+                        <div class="highlight" style="background: #f0fdf4; border-color: #bbf7d0;">
+                            <strong style="color: #166534;">Paradas por el camino:</strong><br><br>
+                            <strong>1. Balluta Bay</strong><br>
+                            → Playa urbana con la iglesia neogótica Our Lady of Mount Carmel de fondo. Edificios art nouveau (Balluta Buildings, 1920s) en primera línea. Bonito de ver de paso.<br><br>
+                            <strong>2. Spinola Bay</strong><br>
+                            → Bahía pequeña con luzzu (barcos de colores malteses) y la escultura metálica <em>"LOVE"</em> de Richard England emergiendo del agua. Terrazas y ambiente tranquilo por la mañana. El rincón más fotogénico de St. Julian's.
+                        </div>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">☕ Desayuno <span class="subtitle-time">10:40 — 11:45</span></div>
+                    <div class="time-block">
+                        <p><strong>Manouche Craft Bakery & Bistro</strong> — Bakery artesanal con harinas orgánicas, buen café y bollería. Focaccias, tostadas, zumos frescos. A 5 min andando de Portomaso Marina.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">St. Julian's (zona Balluta/Spinola) · ~15-20€ los dos · <a href="https://www.google.com/maps/search/Manouche+Craft+Bakery+St+Julians+Malta/@35.9186,14.4905,16z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🤿 Bautismo de buceo + Pecio WWII · RESERVADO <span class="subtitle-time">13:30 — 17:00</span></div>
+                    <div class="time-block">
+                        <p><strong>Scuba Malta — Try Dive + Wreck</strong>. Doble inmersión: primero un bautismo de buceo (aprender a respirar, ejercicios, primera inmersión real) y después exploración de un <strong>pecio histórico de la Segunda Guerra Mundial</strong>. Sin experiencia previa necesaria. Grupos máx. 4 personas, equipo completo y seguro incluidos. Opción de vídeo/foto en el pecio.</p>
+                        <div class="highlight">
+                            <strong>Scuba Malta — Try Dive + Wreck Dive</strong><br>
+                            → 2 inmersiones reales (iniciación + pecio WWII)<br>
+                            → Duración: 3-4 horas<br>
+                            → Portomaso Marina, Level -5, St. Julian's<br>
+                            → <strong>310€</strong> (155€/persona × 2, reservado)<br>
+                            → Incluye: equipo completo, instructor, seguro, opción vídeo<br>
+                            → <a href="https://scubamalta.com/try-dive-malta/wrecks/" target="_blank">scubamalta.com/try-dive-malta/wrecks →</a><br>
+                            → <a href="https://maps.app.goo.gl/5FttjpBMYfy51AFY7" target="_blank" style="color: #0077b6; font-weight: 600;">Abrir en Maps →</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle hotel">🏠 Vuelta al Airbnb <span class="subtitle-time">16:45 — 18:30</span></div>
+                    <div class="time-block">
+                        <p>Vuelta andando al Airbnb (~15 min). Ducha, descanso y cambiarse para salir por la noche. Relax antes de la cena.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍷 Copas en La Valeta <span class="subtitle-time">19:00 — 20:30</span></div>
+                    <div class="time-block">
+                        <p><strong>Trabuxu Wine Bar</strong> — Bar de vinos en una bodega de piedra del siglo XVII bajo las calles de La Valeta. Bóvedas, velas, ambiente íntimo. Buena carta de vinos malteses e italianos, tablas de quesos y embutidos.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Triq id-Dejqa, Valletta (calle estrecha del centro) · ~20-25€ los dos · <a href="https://www.google.com/maps/search/Trabuxu+Wine+Bar+Valletta+Malta/@35.8978,14.5128,17z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍽️ Cena <span class="subtitle-time">20:30 — 22:00</span></div>
+                    <div class="time-block">
+                        <p><strong>San Paolo Naufrago</strong> — Restaurante familiar en pleno centro de La Valeta, en las escaleras de St. Lucy's Street. Pizza artesanal recién horneada, pasta casera, ensaladas y tablas. Terraza al aire libre con ambiente animado, muy fotogénico de noche. Buena carta de vinos, gin y cócteles. Viral en redes por su ubicación y comida.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">St. Lucy's Street, Valletta · ~30-40€ los dos · <a href="https://www.google.com/maps/search/San+Paolo+Naufrago+Valletta+Malta/@35.8978,14.5128,17z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Recomendable reservar (se llena). Después, vuelta al Airbnb andando (~10 min).</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-day2"></div>
+            </div>
+
+            <!-- DÍA 3 -->
+            <div class="day-card day-3">
+                <div class="day-header" onclick="toggleDay(this)">
+                    <span>Día 3 — Sábado 6 de Junio</span>
+                    <span><span class="day-tag">Barco + Fiesta</span><span class="day-budget">~338€</span><span class="collapse-icon">▼</span></span>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Bolt a Buġibba <span class="subtitle-time">08:00 — 08:25</span></div>
+                    <div class="time-block">
+                        <p>Bolt desde Msida hasta el punto de embarque en <strong>Buġibba</strong> (costa norte). ~20 min, ~12-15€.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Salir a las 08:00 para estar allí con margen a las 08:30. <a href="https://www.google.com/maps/place/35%C2%B057'07.1%22N+14%C2%B024'29.2%22E/@35.9519585,14.4081019,15z" target="_blank" style="color: #0077b6; font-weight: 600;">Ver punto de encuentro →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">⛵ Excursión Comino: Blue Lagoon & Crystal Lagoon · RESERVADO <span class="subtitle-time">09:30 — 15:30</span></div>
+                    <div class="time-block">
+                        <p>Excursión en barco a Comino (6h). Blue Lagoon, Crystal Lagoon y cuevas marinas. Día completo en el agua.</p>
+                        <div class="highlight">
+                            <strong>Comino: Blue Lagoon, Crystal Lagoon & Seacaves (6h)</strong><br>
+                            → Blue Lagoon: agua turquesa, el spot más icónico<br>
+                            → Crystal Lagoon: cuevas y aguas cristalinas<br>
+                            → Santa Maria Caves: cuevas marinas<br>
+                            → Tobogán, ventanas submarinas, tumbonas incluidas<br><br>
+                            <strong>130€</strong> (2 personas, reservado)<br>
+                            → <a href="https://www.getyourguide.com/en-gb/malta-l90/comino-blue-lagoon-crystal-lagoon-and-seacaves-tour-t196241/" target="_blank">Ver reserva en GetYourGuide →</a>
+                        </div>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 8px;">💡 Llevad crema solar. Comida y bebida del barco: ~50€ los dos (tienen bar y comida a bordo).</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Bolt de vuelta a Msida <span class="subtitle-time">15:30 — 16:00</span></div>
+                    <div class="time-block">
+                        <p>Bolt de vuelta desde Buġibba al Airbnb. ~20 min, ~12-15€. No hay nada fundamental que ver en Buġibba que no veáis mejor en otro sitio.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle hotel">🏠 Descanso y prepararse <span class="subtitle-time">16:00 — 18:30</span></div>
+                    <div class="time-block">
+                        <p>Ducha, siesta corta y prepararse para salir de fiesta. Cargad móviles y descansad las piernas.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍹 Tardeo — Hugo's Terrace <span class="subtitle-time">19:00 — 21:00</span></div>
+                    <div class="time-block">
+                        <p><strong>Hugo's Terrace</strong> — Rooftop bar en Paceville con buenas vistas, cócteles y ambiente relajado pre-fiesta. Ideal para ver el atardecer con un spritz antes de que empiece la noche. Cenad algo aquí (tienen carta de picoteo/cena) o en alguno de los sitios de la zona.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">St. George's Road, Paceville · ~30-40€ los dos (copas + picar) · <a href="https://www.google.com/maps/search/Hugo's+Terrace+Paceville+Malta/@35.9222,14.4892,17z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🎉 Fiesta — Paceville <span class="subtitle-time">22:00 — …</span></div>
+                    <div class="time-block">
+                        <p><strong>Paceville</strong> es LA zona de fiesta de Malta. Todo está concentrado en 3-4 calles a 10 min andando desde Msida. Se anima a partir de las 23:30. Cervezas ~3-4€, entrada gratis o 10-15€ según evento.</p>
+                        <div class="highlight">
+                            <strong style="color: #166534;">Opciones según el rollo:</strong><br><br>
+                            <strong>Sky Club</strong> — El club grande de Paceville. Electrónica/house, eventos con DJs internacionales. Dos plantas, buen sonido. El más «discoteca» de todos.<br><br>
+                            <strong>Havana Club</strong> — Dos plantas, R&B / hip-hop / reggaetón. Ambiente internacional, se llena los sábados. Sin dress code estricto.<br><br>
+                            <strong>Footloose</strong> — Más mainstream/comercial. Buen ambiente si queréis variedad musical y pasarlo bien sin complicaros.
+                        </div>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 8px;">Vuelta al Airbnb andando (~10 min) cuando os canséis.</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-day3"></div>
+            </div>
+
+            <!-- DÍA 4 -->
+            <div class="day-card day-4">
+                <div class="day-header" onclick="toggleDay(this)">
+                    <span>Día 4 — Domingo 7 de Junio</span>
+                    <span><span class="day-tag">Mdina + Café del Mar</span><span class="day-budget">~192€</span><span class="collapse-icon">▼</span></span>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">😴 Descanso <span class="subtitle-time">— hasta 12:00</span></div>
+                    <div class="time-block">
+                        <p>Despertar tarde después de Paceville. Desayuno tranquilo en el Airbnb con algo del súper.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚌 Bus a Mdina <span class="subtitle-time">12:30 — 13:00</span></div>
+                    <div class="time-block">
+                        <p>Bus <strong>línea 52</strong> desde Msida directo a Mdina. Sale cada 30 min, tarda ~22 min. 1,50€/persona con Tallinja.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Parada cerca del Airbnb (Universidad/Mater Dei) · <a href="https://www.publictransport.com.mt/" target="_blank" style="color: #0077b6; font-weight: 600;">Horarios →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🏰 Mdina — La Ciudad del Silencio <span class="subtitle-time">13:00 — 15:00</span></div>
+                    <div class="time-block">
+                        <p>Antigua capital de Malta, ciudad medieval amurallada. Callejuelas sin coches, palacios nobles y vistas brutales desde las murallas. Se rodó <strong>Juego de Tronos</strong> aquí (King's Landing gates). Todo gratis.</p>
+                        <div class="highlight" style="background: #f0fdf4; border-color: #bbf7d0;">
+                            <strong style="color: #166534;">Qué ver en Mdina:</strong><br><br>
+                            <strong>1. Mdina Gate (Vilhena Gate)</strong><br>
+                            → Puerta barroca de entrada, icónica. La «Puerta del Rey» en Juego de Tronos.<br><br>
+                            <strong>2. Catedral de San Pablo</strong><br>
+                            → Fachada sobria pero interior espectacular. Suelo de mármol con lápidas de caballeros. Entrada ~5€ (opcional).<br><br>
+                            <strong>3. Palazzo Falson</strong><br>
+                            → Palacio medieval del siglo XIII, ahora museo. Bonito patio y colección de arte.<br><br>
+                            <strong>4. Bastion Square y murallas</strong><br>
+                            → Vistas panorámicas de toda la isla. El mejor mirador de Malta.
+                        </div>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍽️ Comida — Fontanella Tea Garden <span class="subtitle-time">15:00 — 16:00</span></div>
+                    <div class="time-block">
+                        <p><strong>Fontanella Tea Garden</strong> — Terraza sobre las murallas de Mdina con vistas panorámicas a toda la isla. Pasta, pizzas, ensaladas y sobre todo tartas caseras increíbles. Precios razonables, ambiente relajado.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">1 Bastion Square, Mdina · ~25-35€ los dos · <a href="https://www.google.com/maps/search/Fontanella+Tea+Garden+Mdina+Malta/@35.8868,14.4028,17z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Bolt a Café del Mar <span class="subtitle-time">16:15 — 16:30</span></div>
+                    <div class="time-block">
+                        <p>Bolt desde Mdina hasta <strong>Café del Mar</strong> en Qawra. ~15 min, ~12-15€. Mucho más cómodo que bus (que requiere transbordo).</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🎉 Tardeo — Café del Mar <span class="subtitle-time">16:30 — 21:00</span></div>
+                    <div class="time-block">
+                        <p><strong>Café del Mar Malta</strong> — Beach club con piscina infinity al borde del mar, DJs, cócteles y atardecer espectacular. Evento de tardeo los domingos. Ambiente relajado pero animado.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Qawra Point, St. Paul's Bay · ~30-40€ los dos (entrada + copas) · <a href="https://www.cafedelmarmalta.com/" target="_blank" style="color: #991b1b; font-weight: 600;">Web →</a> · <a href="https://www.google.com/maps/search/Cafe+del+Mar+Qawra+Malta/@35.9517,14.4178,16z" target="_blank" style="color: #0077b6; font-weight: 600;">Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍽️ Cena en Café del Mar <span class="subtitle-time">21:00 — 22:00</span></div>
+                    <div class="time-block">
+                        <p>Cenad en el propio Café del Mar — tienen restaurante con carta mediterránea completa (no solo snacks). Pescado, pasta, entrantes para compartir. Así no tenéis que moveros y disfrutáis del sitio hasta el final.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~35-45€ los dos · <a href="https://cafedelmar.com/malta/menu" target="_blank" style="color: #0077b6; font-weight: 600;">Ver carta →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Bolt de vuelta a Msida <span class="subtitle-time">22:00 — 22:20</span></div>
+                    <div class="time-block">
+                        <p>Bolt de Qawra a Msida. ~20 min, ~15€. Llegáis al Airbnb sobre las 22:20, día completo y tranquilo.</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-day4"></div>
+            </div>
+
+            <!-- DÍA 5 -->
+            <div class="day-card day-5">
+                <div class="day-header" onclick="toggleDay(this)">
+                    <span>Día 5 — Lunes 8 de Junio</span>
+                    <span><span class="day-tag">Marsaxlokk + St. Peter's Pool</span><span class="day-budget">~128€</span><span class="collapse-icon">▼</span></span>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚌 Bus a Marsaxlokk <span class="subtitle-time">10:00 — 10:20</span></div>
+                    <div class="time-block">
+                        <p>Bus <strong>línea 82</strong> desde Msida directo a Marsaxlokk. Sale cada 30 min, tarda ~18-20 min. 1,50€/persona con Tallinja.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Parada cerca del Airbnb · <a href="https://www.publictransport.com.mt/" target="_blank" style="color: #0077b6; font-weight: 600;">Horarios →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🐟 Marsaxlokk <span class="subtitle-time">10:20 — 12:30</span></div>
+                    <div class="time-block">
+                        <p><strong>Marsaxlokk</strong> — Pueblo pesquero auténtico con los <em>luzzu</em> (barcos de colores con el ojo de Osiris). Puerto precioso, mercado de pescado al aire libre. Pasead por el muelle y haced fotos. Gratis.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">El mercado de pescado funciona toda la semana (especialmente domingos, pero también entre semana). Ambiente tranquilo un lunes.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🦐 Marisco — La Nostra Padrona <span class="subtitle-time">12:30 — 13:45</span></div>
+                    <div class="time-block">
+                        <p><strong>La Nostra Padrona</strong> — Restaurante de marisco en primera línea del puerto. Pescado fresco del día directo de los barcos. Gambas, calamares, pescado a la plancha, risotto de marisco. Terraza con vistas a los luzzu.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Xatt is-Sajjieda, Marsaxlokk waterfront · ~35-45€ los dos · <a href="https://www.google.com/maps/search/La+Nostra+Padrona+Marsaxlokk+Malta/@35.8419,14.5433,17z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle activity">🏊 St. Peter's Pool <span class="subtitle-time">14:00 — 17:00</span></div>
+                    <div class="time-block">
+                        <p><strong>St. Peter's Pool</strong> — Piscina natural excavada en la roca caliza. Agua cristalina, plataformas para saltos (2-5m), snorkel increíble. Gratis. El spot más fotogénico del sur de Malta.</p>
+                        <div class="highlight" style="background: #f0fdf4; border-color: #bbf7d0;">
+                            <strong style="color: #166534;">Info práctica:</strong><br>
+                            → ~35 min andando desde Marsaxlokk (3 km por camino costero, fácil)<br>
+                            → Sin sombra ni servicios: llevad agua, crema y toalla<br>
+                            → Escaleras talladas en la roca para bajar al agua<br>
+                            → Ideal a primera hora de la tarde (sol directo)
+                        </div>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 8px;"><a href="https://www.google.com/maps/search/St+Peters+Pool+Malta/@35.8283,14.5556,16z" target="_blank" style="color: #0077b6; font-weight: 600;">Abrir en Maps →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚌 Vuelta a Msida <span class="subtitle-time">17:00 — 17:45</span></div>
+                    <div class="time-block">
+                        <p>Volver andando a Marsaxlokk (~35 min) y coger el bus <strong>línea 82</strong> de vuelta a Msida (~18 min). O pedir un Bolt directamente desde la zona de St. Peter's Pool (~15 min, ~12€).</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle hotel">🏠 Ducha y relax <span class="subtitle-time">17:45 — 19:30</span></div>
+                    <div class="time-block">
+                        <p>Ducha para quitarse la sal, descanso y preparar maletas para mañana. Última noche tranquila.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle food">🍕 Cena ligera — Fifteen 37 Cafe <span class="subtitle-time">19:30 — 20:30</span></div>
+                    <div class="time-block">
+                        <p><strong>Fifteen 37 Cafe</strong> — Cafetería casual en el paseo marítimo de Msida (ix-Xatt Ta' Xbiex), a 3 min andando del Airbnb. Cocina sencilla y barata: ensaladas, wraps, pasta, hamburguesas. Terraza al borde del mar, perfecto para una última cena tranquila sin complicaciones.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">ix-Xatt Ta' Xbiex, Msida Seafront · ~15-20€ los dos · <a href="https://www.google.com/maps/search/Fifteen+37+Cafe+Msida+Malta/@35.8953,14.4878,16z" target="_blank" style="color: #991b1b; font-weight: 600;">Abrir en Maps →</a></p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Paseo de despedida por el waterfront después de cenar. Acostaos pronto, mañana toca madrugar.</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-day5"></div>
+            </div>
+
+            <!-- DÍA 6 -->
+            <div class="day-card day-6">
+                <div class="day-header" onclick="toggleDay(this)">
+                    <span>Día 6 — Martes 9 de Junio</span>
+                    <span><span class="day-tag">Vuelta a casa</span><span class="day-budget">~117€</span><span class="collapse-icon">▼</span></span>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle hotel">⏰ Despertar y check-out <span class="subtitle-time">06:15 — 07:00</span></div>
+                    <div class="time-block">
+                        <p>Despertador a las <strong>06:15</strong>. Ducha rápida, recoger últimas cosas. Check-out automático (cerradura inteligente, simplemente cerráis y os vais).</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">💡 Dejad la maleta preparada la noche anterior para no perder tiempo.</p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Bolt al aeropuerto <span class="subtitle-time">07:00 — 07:15</span></div>
+                    <div class="time-block">
+                        <p>Bolt desde Msida hasta el <strong>Aeropuerto de Malta (MLA)</strong>. ~15 min, ~12-15€. Llegada sobre las 07:15, 1h 30min antes del vuelo.</p>
+                        <div class="highlight" style="background: #f0f9ff; border-color: #bae6fd;">
+                            <strong style="color: #0077b6;">El aeropuerto de Malta es pequeño</strong><br>
+                            → 1h 30min de margen es más que suficiente para un vuelo intraeuropeo<br>
+                            → Control de seguridad rápido, pocas colas<br>
+                            → Si lleváis solo equipaje de mano, aún más rápido
+                        </div>
+                    </div>
+                </div>
+                <div class="day-map" id="map-day6"></div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">✈️ Avión <span class="subtitle-time">08:45 — 11:05</span></div>
+                    <div class="time-block">
+                        <p>Vuelo <strong>Vueling VY8741</strong> · Airbus A320. Salida <strong>08:45</strong>, llegada Barcelona T1 a las <strong>11:05</strong> (hora local, misma zona horaria).</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~2h 20min · Llevar boarding pass descargado</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-flight-vuelta"></div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚇 Metro <span class="subtitle-time">11:15 — 11:30</span></div>
+                    <div class="time-block">
+                        <p>Vueling llega a <strong>T1</strong>. Metro <strong>L9 Sud</strong> desde <strong>Aeroport T1</strong> una parada hasta <strong>Mas Blau</strong> (junto al parking BCN1). Llegada ~<strong>11:30</strong>.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">5,90€/persona × 2 = 11,80€ · Sale cada 7 min · <a href="https://www.tmb.cat/en/visit-barcelona/public-transport/metro-airport" target="_blank" style="color: #0077b6;">Info TMB →</a></p>
+                    </div>
+                </div>
+                <div class="day-body">
+                    <div class="day-subtitle transport">🚗 Coche <span class="subtitle-time">11:30 — 14:45</span></div>
+                    <div class="time-block">
+                        <p>Recoger el coche en el <strong>Parking BCN1</strong>. Vuelta por AP-2 / A-2 a Zaragoza.</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~3h 15min · ~300 km · Gasolina ~21€ · Parking BCN1 gratis · Llegada a casa ~<strong>14:45</strong> 🎉</p>
+                    </div>
+                </div>
+                <div class="day-map" id="map-bcn-zgz"></div>
+            </div>
+
+            <!-- SECCIONES COMPACTAS -->
+            <div class="day-card info-section collapsed" style="margin-top: 36px;">
+                <div class="day-header" onclick="toggleDay(this)" style="background: linear-gradient(135deg, #eff6ff, #f0f9ff); color: #1e40af; border-color: #bae6fd;">
+                    <span>🔗 Reservas y enlaces</span>
+                    <span class="collapse-icon">▼</span>
+                </div>
+                <div class="day-body" style="padding: 16px 24px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.85em;">
+                        <a href="https://scubamalta.com/try-dive-malta/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🤿 Scuba Malta — Try Dive ✅</a>
+                        <a href="https://www.getyourguide.com/en-gb/malta-l90/comino-blue-lagoon-crystal-lagoon-and-seacaves-tour-t196241/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">⛵ Comino Blue Lagoon ✅</a>
+                        <a href="https://www.airbnb.es/rooms/11714770" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🏠 Airbnb Msida ✅</a>
+                        <a href="https://www.publictransport.com.mt/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🚌 Malta Public Transport</a>
+                        <a href="https://www.cafedelmarmalta.com/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🎉 Café del Mar Malta</a>
+                        <a href="https://www.facebook.com/NenuTheArtisanBaker/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🍽️ Nenu the Artisan Baker (Día 1)</a>
+                        <a href="https://www.instagram.com/sanpaolonaufrago/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🍕 San Paolo Naufrago (Día 2)</a>
+                        <a href="https://www.fontanellateagarden.com/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🍰 Fontanella Tea Garden (Día 4)</a>
+                        <a href="https://www.facebook.com/LaNostraPadronaMarsaxlokk/" target="_blank" style="color: #1e40af; text-decoration: none; padding: 6px 0;">🦐 La Nostra Padrona (Día 5)</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="day-card info-section collapsed" style="margin-top: 12px;">
+                <div class="day-header" onclick="toggleDay(this)" style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); color: #166534; border-color: #bbf7d0;">
+                    <span>💰 Gastos — ~1.475€ total</span>
+                    <span class="collapse-icon">▼</span>
+                </div>
+                <div class="day-body" style="padding: 16px 24px; font-size: 0.82em;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr style="border-bottom: 1px solid #e5e7eb;"><td colspan="2" style="padding: 8px 0; font-weight: 700; color: #0077b6;">✈️ Viaje — ~204€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Gasolina ZGZ ↔ BCN (×2)</td><td style="text-align: right; color: #374151;">~42€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Metro aeropuerto BCN (×2)</td><td style="text-align: right; color: #374151;">23,60€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Vuelos (Ryanair + Vueling)</td><td style="text-align: right; color: #374151;">138,75€</td></tr>
+
+                        <tr style="border-bottom: 1px solid #e5e7eb;"><td colspan="2" style="padding: 8px 0; padding-top: 12px; font-weight: 700; color: #f59e0b;">🏠 Alojamiento — 275,15€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Airbnb Msida (5 noches)</td><td style="text-align: right; color: #374151;">275,15€</td></tr>
+
+                        <tr style="border-bottom: 1px solid #e5e7eb;"><td colspan="2" style="padding: 8px 0; padding-top: 12px; font-weight: 700; color: #6366f1;">🚌 Transporte Malta — ~84€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Buses (aeropuerto, Mdina, Marsaxlokk)</td><td style="text-align: right; color: #374151;">~12€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Bolts (Buġibba ×2, Mdina→CdM, Qawra, aeropuerto)</td><td style="text-align: right; color: #374151;">~72€</td></tr>
+
+                        <tr style="border-bottom: 1px solid #e5e7eb;"><td colspan="2" style="padding: 8px 0; padding-top: 12px; font-weight: 700; color: #dc2626;">🍽️ Comida — ~281€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 1: Desayuno + Nenu the Artisan Baker</td><td style="text-align: right; color: #374151;">~60€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 2: Manouche + San Paolo Naufrago</td><td style="text-align: right; color: #374151;">~53€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 3: Comida y bebida en el barco</td><td style="text-align: right; color: #374151;">~50€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 4: Fontanella Tea Garden</td><td style="text-align: right; color: #374151;">~30€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 5: La Nostra Padrona + Fifteen 37</td><td style="text-align: right; color: #374151;">~58€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Supermercado (snacks, agua, desayunos)</td><td style="text-align: right; color: #374151;">~30€</td></tr>
+
+                        <tr style="border-bottom: 1px solid #e5e7eb;"><td colspan="2" style="padding: 8px 0; padding-top: 12px; font-weight: 700; color: #16a34a;">🤿 Actividades — 440€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Buceo Scuba Malta (155€ × 2)</td><td style="text-align: right; color: #374151;">310€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Barco Comino Blue Lagoon (×2)</td><td style="text-align: right; color: #374151;">130€</td></tr>
+
+                        <tr style="border-bottom: 1px solid #e5e7eb;"><td colspan="2" style="padding: 8px 0; padding-top: 12px; font-weight: 700; color: #7c3aed;">🎉 Fiesta — ~191€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 1: The Compass Lounge</td><td style="text-align: right; color: #374151;">~18€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 2: Trabuxu Wine Bar</td><td style="text-align: right; color: #374151;">~23€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 3: Hugo's Terrace + Paceville</td><td style="text-align: right; color: #374151;">~75€</td></tr>
+                        <tr><td style="padding: 3px 0; padding-left: 16px; color: #4b5563;">Día 4: Café del Mar (tardeo + cena)</td><td style="text-align: right; color: #374151;">~75€</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="day-card info-section collapsed" style="margin-top: 12px;">
+                <div class="day-header" onclick="toggleDay(this)" style="background: linear-gradient(135deg, #fefce8, #fff7ed); color: #92400e; border-color: #fde68a;">
+                    <span>💡 Tips prácticos</span>
+                    <span class="collapse-icon">▼</span>
+                </div>
+                <div class="day-body" style="padding: 16px 24px; font-size: 0.82em; color: #4b5563;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <strong style="color: #0077b6;">Transporte</strong><br>
+                            Tallinja: 1,50€/viaje · Explore Card: 21€/7 días · Parada bus a 100m del Airbnb
+                        </div>
+                        <div>
+                            <strong style="color: #7c3aed;">Fiesta</strong><br>
+                            Paceville: zona principal · Hugo's, Sky Club, Havana, Footloose · A 10 min andando
+                        </div>
+                        <div>
+                            <strong style="color: #16a34a;">Ahorro</strong><br>
+                            Pastizzi: 0,50€ · Agua en súper · Muchas atracciones gratis
+                        </div>
+                        <div>
+                            <strong style="color: #374151;">Útil</strong><br>
+                            UE (roaming gratis) · Se conduce por la izquierda · Idiomas: maltés e inglés
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Viaje a Malta 2026 · BCN → MLA · 4-9 Junio<br>
+            <span style="opacity:0.7; font-size:0.9em;">¡Que lo paséis increíble! 🇲🇹</span>
+        </div>
+    </div>
+
+    <script>
+        // Toggle collapse days
+        function toggleDay(header) {
+            const dayCard = header.closest('.day-card');
+            dayCard.classList.toggle('collapsed');
+        }
+
+        // Coordenadas clave
+        const ZGZ = [41.6488, -0.8891];
+        const BCN_AIRPORT = [41.2974, 2.0833];
+        const BCN = [41.2974, 2.0833];
+        const MLA = [35.8575, 14.4775];
+        const MSIDA = [35.8953, 14.4878];
+        const VALETA = [35.8989, 14.5146];
+        const SLIEMA = [35.9122, 14.5028];
+        const ST_JULIANS = [35.9186, 14.4905];
+        const COMINO_BLUE_LAGOON = [36.0117, 14.3264];
+        const CRYSTAL_LAGOON = [36.0148, 14.3186];
+        const PACEVILLE = [35.9222, 14.4892];
+        const MDINA = [35.8868, 14.4028];
+        const CAFE_DEL_MAR = [35.9517, 14.4178];
+        const MARSAXLOKK = [35.8419, 14.5433];
+        const ST_PETERS_POOL = [35.8283, 14.5556];
+        const AIRPORT = [35.8575, 14.4775];
+
+        // Tile layer base
+        const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+        const tileAttr = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+        // Helper: curved line for flights
+        function getCurvedPoints(start, end, numPoints = 50) {
+            const points = [];
+            const midLat = (start[0] + end[0]) / 2;
+            const midLng = (start[1] + end[1]) / 2;
+            const dx = end[1] - start[1];
+            const dy = end[0] - start[0];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const offsetLat = midLat + dy * 0.15;
+            const offsetLng = midLng - dx * 0.15;
+            for (let i = 0; i <= numPoints; i++) {
+                const t = i / numPoints;
+                const lat = (1 - t) * (1 - t) * start[0] + 2 * (1 - t) * t * offsetLat + t * t * end[0];
+                const lng = (1 - t) * (1 - t) * start[1] + 2 * (1 - t) * t * offsetLng + t * t * end[1];
+                points.push([lat, lng]);
+            }
+            return points;
+        }
+
+        // Custom icons
+        function planeIcon() {
+            return L.divIcon({ html: '✈️', className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+        }
+        function pinIcon(emoji) {
+            return L.divIcon({ html: `<div style="font-size:20px;text-align:center;">${emoji}</div>`, className: '', iconSize: [28, 28], iconAnchor: [14, 28] });
+        }
+
+        // ===== ZARAGOZA → BARCELONA MAP =====
+        const mapZgzBcn = L.map('map-zgz-bcn', { zoomControl: false, attributionControl: false }).fitBounds([ZGZ, BCN_AIRPORT], { padding: [30, 30] });
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapZgzBcn);
+        L.marker(ZGZ, { icon: pinIcon('🚗') }).addTo(mapZgzBcn).bindTooltip('Zaragoza (02:00)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(BCN_AIRPORT, { icon: pinIcon('🅿️') }).addTo(mapZgzBcn).bindTooltip('Parking BCN1 (05:15)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.polyline([ZGZ, [41.52, 0.60], BCN_AIRPORT], { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8,6' }).addTo(mapZgzBcn);
+
+        // ===== BCN1 → AEROPUERTO METRO MAP =====
+        const MAS_BLAU = [41.3008, 2.0685];
+        const AEROPORT_T2 = [41.2963, 2.0735];
+        const mapBcn1Airport = L.map('map-bcn1-airport', { zoomControl: false, attributionControl: false }).setView([41.2985, 2.071], 15);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapBcn1Airport);
+        L.marker(MAS_BLAU, { icon: pinIcon('🅿️') }).addTo(mapBcn1Airport).bindTooltip('Mas Blau (L9 Sud)', { permanent: true, direction: 'right', offset: [10, 0] });
+        L.marker(AEROPORT_T2, { icon: pinIcon('✈️') }).addTo(mapBcn1Airport).bindTooltip('Aeroport T2', { permanent: true, direction: 'right', offset: [10, 0] });
+        L.polyline([MAS_BLAU, AEROPORT_T2], { color: '#f97316', weight: 5, opacity: 0.9 }).addTo(mapBcn1Airport);
+
+        // ===== ACCOMMODATION MAP =====
+        const mapAccom = L.map('map-accommodation', { zoomControl: false, attributionControl: false }).setView(MSIDA, 15);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapAccom);
+        L.marker(MSIDA, { icon: pinIcon('🏠') }).addTo(mapAccom).bindTooltip('Airbnb — Msida Marina', { permanent: true, direction: 'right', offset: [10, 0] });
+        L.marker(VALETA, { icon: pinIcon('🏰') }).addTo(mapAccom).bindTooltip('La Valeta', { direction: 'top', offset: [0, -10] });
+        L.marker(SLIEMA, { icon: pinIcon('🏖️') }).addTo(mapAccom).bindTooltip('Sliema', { direction: 'top', offset: [0, -10] });
+        L.marker(ST_JULIANS, { icon: pinIcon('🎉') }).addTo(mapAccom).bindTooltip("St. Julian's", { direction: 'top', offset: [0, -10] });
+
+        // ===== FLIGHT MAPS =====
+        // IDA: BCN → MLA
+        const mapIda = L.map('map-flight-ida', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false }).fitBounds([BCN, MLA], { padding: [30, 30] });
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapIda);
+        L.polyline(getCurvedPoints(BCN, MLA), { color: '#003580', weight: 3, dashArray: '8,6', opacity: 0.8 }).addTo(mapIda);
+        L.marker(BCN, { icon: pinIcon('🛫') }).addTo(mapIda).bindTooltip('Barcelona (BCN)', { permanent: true, direction: 'top', offset: [0, -10], className: 'flight-tooltip' });
+        L.marker(MLA, { icon: pinIcon('🛬') }).addTo(mapIda).bindTooltip('Malta (MLA)', { permanent: true, direction: 'top', offset: [0, -10], className: 'flight-tooltip' });
+
+        // VUELTA: MLA → BCN
+        const mapVuelta = L.map('map-flight-vuelta', { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false }).fitBounds([MLA, BCN], { padding: [30, 30] });
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapVuelta);
+        L.polyline(getCurvedPoints(MLA, BCN), { color: '#ffcd02', weight: 3, dashArray: '8,6', opacity: 0.8 }).addTo(mapVuelta);
+        L.marker(MLA, { icon: pinIcon('🛫') }).addTo(mapVuelta).bindTooltip('Malta (MLA)', { permanent: true, direction: 'top', offset: [0, -10], className: 'flight-tooltip' });
+        L.marker(BCN, { icon: pinIcon('🛬') }).addTo(mapVuelta).bindTooltip('Barcelona (BCN)', { permanent: true, direction: 'top', offset: [0, -10], className: 'flight-tooltip' });
+
+        // ===== DAY MAPS =====
+
+        // DÍA 2: Msida → Portomaso (Buceo) → La Valeta
+        const PORTOMASO = [35.9225, 14.4935];
+        const mapDay2 = L.map('map-day2', { zoomControl: false, attributionControl: false }).setView([35.91, 14.50], 14);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapDay2);
+        L.marker(MSIDA, { icon: pinIcon('🏠') }).addTo(mapDay2).bindTooltip('Msida', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(PORTOMASO, { icon: pinIcon('🤿') }).addTo(mapDay2).bindTooltip('Scuba Malta (Portomaso)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(VALETA, { icon: pinIcon('🍷') }).addTo(mapDay2).bindTooltip('La Valeta (Copas + Cena)', { permanent: true, direction: 'right', offset: [10, 0] });
+        L.polyline([MSIDA, PORTOMASO, MSIDA, VALETA], { color: '#065f46', weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(mapDay2);
+
+        // DÍA 3: Barco — Msida → Buġibba → Blue Lagoon → Paceville
+        const BUGIBBA = [35.9520, 14.4081];
+        const mapDay3 = L.map('map-day3', { zoomControl: false, attributionControl: false }).setView([35.96, 14.40], 11);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapDay3);
+        L.marker(MSIDA, { icon: pinIcon('🏠') }).addTo(mapDay3).bindTooltip('Msida', { direction: 'top', offset: [0, -10] });
+        L.marker(BUGIBBA, { icon: pinIcon('⚓') }).addTo(mapDay3).bindTooltip('Buġibba (embarque)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(COMINO_BLUE_LAGOON, { icon: pinIcon('💎') }).addTo(mapDay3).bindTooltip('Blue Lagoon', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(CRYSTAL_LAGOON, { icon: pinIcon('✨') }).addTo(mapDay3).bindTooltip('Crystal Lagoon', { direction: 'left', offset: [-10, 0] });
+        L.marker(PACEVILLE, { icon: pinIcon('🎉') }).addTo(mapDay3).bindTooltip('Paceville (Fiesta)', { permanent: true, direction: 'right', offset: [10, 0] });
+        L.polyline([MSIDA, BUGIBBA, COMINO_BLUE_LAGOON, CRYSTAL_LAGOON], { color: '#3730a3', weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(mapDay3);
+        L.polyline([BUGIBBA, MSIDA, PACEVILLE], { color: '#7c3aed', weight: 2, opacity: 0.5, dashArray: '4,8' }).addTo(mapDay3);
+
+        // DÍA 4: Msida → Mdina → Café del Mar (Qawra) → Msida
+        const mapDay4 = L.map('map-day4', { zoomControl: false, attributionControl: false }).setView([35.92, 14.43], 12);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapDay4);
+        L.marker(MSIDA, { icon: pinIcon('🏠') }).addTo(mapDay4).bindTooltip('Msida', { direction: 'top', offset: [0, -10] });
+        L.marker(MDINA, { icon: pinIcon('🏰') }).addTo(mapDay4).bindTooltip('Mdina', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(CAFE_DEL_MAR, { icon: pinIcon('🎶') }).addTo(mapDay4).bindTooltip('Café del Mar (Tardeo)', { permanent: true, direction: 'right', offset: [10, 0] });
+        L.polyline([MSIDA, MDINA], { color: '#92400e', weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(mapDay4);
+        L.polyline([MDINA, CAFE_DEL_MAR, MSIDA], { color: '#f59e0b', weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(mapDay4);
+
+        // DÍA 5: Msida → Marsaxlokk → St. Peter's Pool → Msida
+        const mapDay5 = L.map('map-day5', { zoomControl: false, attributionControl: false }).setView([35.87, 14.50], 12);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapDay5);
+        L.marker(MSIDA, { icon: pinIcon('🏠') }).addTo(mapDay5).bindTooltip('Msida', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(MARSAXLOKK, { icon: pinIcon('🐟') }).addTo(mapDay5).bindTooltip('Marsaxlokk', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(ST_PETERS_POOL, { icon: pinIcon('🏊') }).addTo(mapDay5).bindTooltip("St. Peter's Pool", { permanent: true, direction: 'right', offset: [10, 0] });
+        L.polyline([MSIDA, MARSAXLOKK, ST_PETERS_POOL, MARSAXLOKK, MSIDA], { color: '#9d174d', weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(mapDay5);
+
+        // DÍA 6: Msida → Aeropuerto
+        const mapDay6 = L.map('map-day6', { zoomControl: false, attributionControl: false }).setView([35.875, 14.48], 13);
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapDay6);
+        L.marker(MSIDA, { icon: pinIcon('🏠') }).addTo(mapDay6).bindTooltip('Msida', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(AIRPORT, { icon: pinIcon('✈️') }).addTo(mapDay6).bindTooltip('Aeropuerto MLA', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.polyline([MSIDA, AIRPORT], { color: '#6b21a8', weight: 3, opacity: 0.7, dashArray: '6,8' }).addTo(mapDay6);
+
+        // DÍA 6: BCN → Zaragoza
+        const mapBcnZgz = L.map('map-bcn-zgz', { zoomControl: false, attributionControl: false }).fitBounds([BCN_AIRPORT, ZGZ], { padding: [30, 30] });
+        L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapBcnZgz);
+        L.marker(BCN_AIRPORT, { icon: pinIcon('🅿️') }).addTo(mapBcnZgz).bindTooltip('Parking BCN1 (11:30)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(ZGZ, { icon: pinIcon('🏠') }).addTo(mapBcnZgz).bindTooltip('Zaragoza (14:45)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.polyline([BCN_AIRPORT, [41.52, 0.60], ZGZ], { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8,6' }).addTo(mapBcnZgz);
+    </script>
+</body>
+</html>
