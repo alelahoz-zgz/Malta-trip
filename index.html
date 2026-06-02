@@ -659,17 +659,17 @@
                 </div>
                 <div class="day-map" id="map-flight-vuelta"></div>
                 <div class="day-body">
-                    <div class="day-subtitle transport">🚇 Metro <span class="subtitle-time">11:15 — 11:30</span></div>
+                    <div class="day-subtitle transport">🚇 Metro <span class="subtitle-time">11:15 — 11:45</span></div>
                     <div class="time-block">
-                        <p>Vueling llega a <strong>T1</strong>. Metro <strong>L9 Sud</strong> desde <strong>Aeroport T1</strong> una parada hasta <strong>Mas Blau</strong> (junto al parking BCN1). Llegada ~<strong>11:30</strong>.</p>
+                        <p>Vueling llega a <strong>T1</strong>. Metro <strong>L9 Sud</strong> desde <strong>Aeroport T1</strong> una parada hasta <strong>Mas Blau</strong> (junto al parking BCN1). Llegada ~<strong>11:45</strong>.</p>
                         <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">5,90€/persona × 2 = 11,80€ · Sale cada 7 min · <a href="https://www.tmb.cat/en/visit-barcelona/public-transport/metro-airport" target="_blank" style="color: #0077b6;">Info TMB →</a></p>
                     </div>
                 </div>
                 <div class="day-body">
-                    <div class="day-subtitle transport">🚗 Coche <span class="subtitle-time">11:30 — 14:45</span></div>
+                    <div class="day-subtitle transport">🚗 Coche <span class="subtitle-time">12:00 — 15:15</span></div>
                     <div class="time-block">
                         <p>Recoger el coche en el <strong>Parking BCN1</strong>. Vuelta por AP-2 / A-2 a Zaragoza.</p>
-                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~3h 15min · ~300 km · Gasolina ~21€ · Parking BCN1 gratis · Llegada a casa ~<strong>14:45</strong> 🎉</p>
+                        <p style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">~3h 15min · ~300 km · Gasolina ~21€ · Llegada a casa ~<strong>15:15</strong> 🎉</p>
                     </div>
                 </div>
                 <div class="day-map" id="map-bcn-zgz"></div>
@@ -915,8 +915,8 @@
         // DÍA 6: BCN → Zaragoza
         const mapBcnZgz = L.map('map-bcn-zgz', { zoomControl: false, attributionControl: false }).fitBounds([BCN_AIRPORT, ZGZ], { padding: [30, 30] });
         L.tileLayer(tileUrl, { attribution: tileAttr }).addTo(mapBcnZgz);
-        L.marker(BCN_AIRPORT, { icon: pinIcon('🅿️') }).addTo(mapBcnZgz).bindTooltip('Parking BCN1 (11:30)', { permanent: true, direction: 'top', offset: [0, -10] });
-        L.marker(ZGZ, { icon: pinIcon('🏠') }).addTo(mapBcnZgz).bindTooltip('Zaragoza (14:45)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(BCN_AIRPORT, { icon: pinIcon('🅿️') }).addTo(mapBcnZgz).bindTooltip('Parking BCN1 (12:00)', { permanent: true, direction: 'top', offset: [0, -10] });
+        L.marker(ZGZ, { icon: pinIcon('🏠') }).addTo(mapBcnZgz).bindTooltip('Zaragoza (15:15)', { permanent: true, direction: 'top', offset: [0, -10] });
         L.polyline([BCN_AIRPORT, [41.52, 0.60], ZGZ], { color: '#3b82f6', weight: 3, opacity: 0.8, dashArray: '8,6' }).addTo(mapBcnZgz);
     </script>
 </body>
